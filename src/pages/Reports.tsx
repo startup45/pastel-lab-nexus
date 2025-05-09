@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -172,7 +171,14 @@ const Reports: React.FC = () => {
     setIsEditMode(true);
   };
 
-  const handleDownloadPDF = (reportId: string) => {
+  const handleDownloadPDF = () => {
+    // If we're in the view/edit dialog, use the current report ID
+    const reportId = selectedReport?.id || "new-report";
+    toast.success(`Downloading report ${reportId} as PDF...`);
+    // In a real app, this would trigger PDF generation
+  };
+
+  const handleReportRowDownload = (reportId: string) => {
     toast.success(`Downloading report ${reportId} as PDF...`);
     // In a real app, this would trigger PDF generation
   };
@@ -422,7 +428,7 @@ const Reports: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              onClick={() => handleDownloadPDF(report.id)}
+                              onClick={() => handleReportRowDownload(report.id)}
                             >
                               <Download className="mr-1 h-4 w-4" /> PDF
                             </Button>
@@ -878,7 +884,7 @@ const Reports: React.FC = () => {
             </div>
             
             <div className="flex flex-wrap gap-2">
-              {/* Edit/Create mode controls */}
+              {/* Edit/Create mode controls - Fix the handleDownloadPDF onClick handler */}
               {(isEditMode || isCreateDialogOpen) && (
                 <>
                   <Button variant="outline" onClick={handleResetForm}>
