@@ -12,7 +12,8 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { TestTube } from 'lucide-react';
+import { TestTube, UserIcon, LockIcon } from 'lucide-react';
+import { toast } from "sonner";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -27,20 +28,22 @@ const Login: React.FC = () => {
     
     try {
       await login(email, password);
+      toast.success("Login successful! Redirecting to dashboard...");
       navigate('/dashboard');
     } catch (error) {
-      // Error is handled in AuthContext
+      console.error("Login error:", error);
+      toast.error("Login failed. Please check your credentials.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-lab-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-lg animate-fade-in border-lab-primary border-t-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
+      <Card className="w-full max-w-md shadow-lg animate-fade-in border-t-4 border-primary">
         <CardHeader className="space-y-1 flex flex-col items-center">
-          <div className="h-12 w-12 bg-lab-primary rounded-full flex items-center justify-center mb-2">
-            <TestTube className="h-6 w-6 text-white" />
+          <div className="h-16 w-16 bg-primary rounded-full flex items-center justify-center mb-4 shadow-md">
+            <TestTube className="h-8 w-8 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl text-center">Lab Management System</CardTitle>
           <CardDescription className="text-center">
@@ -48,50 +51,56 @@ const Login: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your.email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-white"
-              />
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="relative">
+                <UserIcon className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="pl-10 bg-background border shadow-sm"
+                />
+              </div>
+              <div className="text-xs text-muted-foreground ml-1">
                 Demo logins: admin@labsystem.com, tech@labsystem.com, reception@labsystem.com
               </div>
             </div>
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="bg-white"
-              />
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="relative">
+                <LockIcon className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pl-10 bg-background border shadow-sm"
+                />
+              </div>
+              <div className="text-xs text-muted-foreground ml-1">
                 Demo passwords: admin123, tech123, reception123
               </div>
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-2">
             <Button 
               type="submit" 
-              className="w-full bg-lab-primary hover:bg-lab-primary/90"
+              className="w-full"
+              variant="lab"
               disabled={isSubmitting}
+              size="lg"
             >
               {isSubmitting ? 'Signing In...' : 'Sign In'}
             </Button>
+            
+            <p className="text-sm text-center text-muted-foreground mt-2">
+              Secure login with role-based access control
+            </p>
           </CardFooter>
         </form>
       </Card>
