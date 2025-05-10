@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -919,4 +920,223 @@ const Reports: React.FC = () => {
                             <TableCell>White Blood Cell</TableCell>
                             <TableCell>
                               <Input 
-                                type
+                                type="number" 
+                                disabled={!isEditMode && !isCreateDialogOpen}
+                                {...form.register(`testResults.bloodCount.wbc` as const, { 
+                                  valueAsNumber: true 
+                                })}
+                              />
+                            </TableCell>
+                            <TableCell>cells/µL</TableCell>
+                            <TableCell>4500 - 11000</TableCell>
+                            <TableCell className={getFlagColor(
+                              getWbcFlag(form.getValues()?.testResults?.bloodCount?.wbc)
+                            )}>
+                              {getWbcFlag(form.getValues()?.testResults?.bloodCount?.wbc)}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Platelet Count</TableCell>
+                            <TableCell>
+                              <Input 
+                                type="number" 
+                                disabled={!isEditMode && !isCreateDialogOpen}
+                                {...form.register(`testResults.bloodCount.platelet` as const, { 
+                                  valueAsNumber: true 
+                                })}
+                              />
+                            </TableCell>
+                            <TableCell>cells/µL</TableCell>
+                            <TableCell>150000 - 450000</TableCell>
+                            <TableCell className={getFlagColor(
+                              getPlateletFlag(form.getValues()?.testResults?.bloodCount?.platelet)
+                            )}>
+                              {getPlateletFlag(form.getValues()?.testResults?.bloodCount?.platelet)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+
+                  {/* Lipid Profile */}
+                  {(selectedTests.includes('Lipid Profile') || 
+                    (selectedReport?.tests && selectedReport.tests.includes('Lipid Profile'))) && (
+                    <div>
+                      <h4 className="font-medium mb-2">💉 Lipid Profile</h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Parameter</TableHead>
+                            <TableHead>Result</TableHead>
+                            <TableHead>Unit</TableHead>
+                            <TableHead>Reference Range</TableHead>
+                            <TableHead>Flag</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell>Total Cholesterol</TableCell>
+                            <TableCell>
+                              <Input 
+                                type="number" 
+                                disabled={!isEditMode && !isCreateDialogOpen}
+                                {...form.register(`testResults.lipidProfile.totalCholesterol` as const, { 
+                                  valueAsNumber: true 
+                                })}
+                              />
+                            </TableCell>
+                            <TableCell>mg/dL</TableCell>
+                            <TableCell>125 - 200</TableCell>
+                            <TableCell className={getFlagColor(
+                              getTotalCholesterolFlag(form.getValues()?.testResults?.lipidProfile?.totalCholesterol)
+                            )}>
+                              {getTotalCholesterolFlag(form.getValues()?.testResults?.lipidProfile?.totalCholesterol)}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Triglycerides</TableCell>
+                            <TableCell>
+                              <Input 
+                                type="number" 
+                                disabled={!isEditMode && !isCreateDialogOpen}
+                                {...form.register(`testResults.lipidProfile.triglycerides` as const, { 
+                                  valueAsNumber: true 
+                                })}
+                              />
+                            </TableCell>
+                            <TableCell>mg/dL</TableCell>
+                            <TableCell>40 - 150</TableCell>
+                            <TableCell className={getFlagColor(
+                              getTriglyceridesFlag(form.getValues()?.testResults?.lipidProfile?.triglycerides)
+                            )}>
+                              {getTriglyceridesFlag(form.getValues()?.testResults?.lipidProfile?.triglycerides)}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>HDL Cholesterol</TableCell>
+                            <TableCell>
+                              <Input 
+                                type="number" 
+                                disabled={!isEditMode && !isCreateDialogOpen}
+                                {...form.register(`testResults.lipidProfile.hdl` as const, { 
+                                  valueAsNumber: true 
+                                })}
+                              />
+                            </TableCell>
+                            <TableCell>mg/dL</TableCell>
+                            <TableCell>M: 35 - 65, F: 35 - 80</TableCell>
+                            <TableCell className={getFlagColor(
+                              getHdlFlag(
+                                form.getValues()?.testResults?.lipidProfile?.hdl, 
+                                form.getValues().sex
+                              )
+                            )}>
+                              {getHdlFlag(
+                                form.getValues()?.testResults?.lipidProfile?.hdl, 
+                                form.getValues().sex
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>LDL Cholesterol</TableCell>
+                            <TableCell>
+                              <Input 
+                                type="number" 
+                                disabled={!isEditMode && !isCreateDialogOpen}
+                                {...form.register(`testResults.lipidProfile.ldl` as const, { 
+                                  valueAsNumber: true 
+                                })}
+                              />
+                            </TableCell>
+                            <TableCell>mg/dL</TableCell>
+                            <TableCell>0 - 130</TableCell>
+                            <TableCell className={getFlagColor(
+                              getLdlFlag(form.getValues()?.testResults?.lipidProfile?.ldl)
+                            )}>
+                              {getLdlFlag(form.getValues()?.testResults?.lipidProfile?.ldl)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+
+                  {/* Additional Notes */}
+                  <div>
+                    <FormField
+                      name="results"
+                      control={form.control}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Additional Notes</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              disabled={!isEditMode && !isCreateDialogOpen}
+                              placeholder="Enter any additional notes or comments about the test results"
+                              className="min-h-[120px]"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            </Form>
+          </div>
+
+          <DialogFooter className="flex flex-wrap gap-2 mt-6">
+            {isEditMode || isCreateDialogOpen ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  type="button"
+                  onClick={handleResetForm}
+                  className="flex-1 sm:flex-none"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" /> Reset
+                </Button>
+                <Button 
+                  variant="default" 
+                  type="button"
+                  onClick={handleSaveReport}
+                  className="flex-1 sm:flex-none bg-lab-primary hover:bg-lab-primary/90"
+                >
+                  <Save className="mr-2 h-4 w-4" /> Save Report
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={handleEditReport} 
+                  className="flex-1 sm:flex-none"
+                >
+                  Edit Report
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePrintReport}
+                  className="flex-1 sm:flex-none"
+                >
+                  <Printer className="mr-2 h-4 w-4" /> Print
+                </Button>
+                <Button 
+                  variant="default" 
+                  onClick={handleDownloadPDF}
+                  className="flex-1 sm:flex-none bg-lab-primary hover:bg-lab-primary/90"
+                >
+                  <Download className="mr-2 h-4 w-4" /> Download PDF
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Reports;
