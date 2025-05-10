@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, TestTube, FileText, Clock } from 'lucide-react';
+import { Users, TestTube, FileText } from 'lucide-react';
 
 const StatCard = ({ title, value, icon, color }: { 
   title: string; 
@@ -52,12 +52,6 @@ const Dashboard: React.FC = () => {
       icon: <FileText className="h-6 w-6 text-white" />,
       color: 'bg-lab-accent',
     },
-    {
-      title: 'Pending Results',
-      value: '7',
-      icon: <Clock className="h-6 w-6 text-white" />,
-      color: 'bg-orange-400',
-    },
   ];
 
   const recentPatients = [
@@ -66,6 +60,9 @@ const Dashboard: React.FC = () => {
     { id: 'P-2024-0125', name: 'Robert Johnson', age: 51, date: '2024-05-07', status: 'Processing' },
     { id: 'P-2024-0124', name: 'Maria Garcia', age: 28, date: '2024-05-07', status: 'Completed' },
     { id: 'P-2024-0123', name: 'David Brown', age: 39, date: '2024-05-06', status: 'Completed' },
+    { id: 'P-2024-0122', name: 'Lisa Taylor', age: 44, date: '2024-05-06', status: 'Completed' },
+    { id: 'P-2024-0121', name: 'John Smith', age: 52, date: '2024-05-05', status: 'Completed' },
+    { id: 'P-2024-0120', name: 'Emma Davis', age: 29, date: '2024-05-05', status: 'Completed' },
   ];
 
   const criticalResults = [
@@ -91,7 +88,7 @@ const Dashboard: React.FC = () => {
         <p className="text-muted-foreground">Here's what's happening in your lab today.</p>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (
           <StatCard
             key={stat.title}

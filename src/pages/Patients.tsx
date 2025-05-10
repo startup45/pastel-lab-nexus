@@ -18,8 +18,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 // Sample patients data
 const initialPatients = [
@@ -47,6 +58,9 @@ const Patients: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>(initialPatients);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [newPatient, setNewPatient] = useState<Partial<Patient>>({
     id: `P-2024-${Math.floor(Math.random() * 9000) + 1000}`,
     name: '',
@@ -72,6 +86,7 @@ const Patients: React.FC = () => {
   const handleAddPatient = () => {
     // Validate required fields
     if (!newPatient.name || !newPatient.age || !newPatient.sex) {
+      toast.error("Name, age, and sex are required fields");
       return;
     }
 
@@ -87,6 +102,76 @@ const Patients: React.FC = () => {
 
     setPatients([patientToAdd, ...patients]);
     setIsAddModalOpen(false);
+    resetPatientForm();
+    toast.success("Patient added successfully");
+  };
+
+  const handleEditPatient = () => {
+    if (!selectedPatient) return;
+    
+    // Validate required fields
+    if (!newPatient.name || !newPatient.age || !newPatient.sex) {
+      toast.error("Name, age, and sex are required fields");
+      return;
+    }
+
+    const updatedPatients = patients.map(patient => 
+      patient.id === selectedPatient.id 
+        ? { 
+            ...patient,
+            name: newPatient.name || patient.name,
+            age: Number(newPatient.age) || patient.age,
+            sex: newPatient.sex || patient.sex,
+            contact: newPatient.contact || patient.contact,
+            referredBy: newPatient.referredBy || patient.referredBy,
+            collectionDate: newPatient.collectionDate || patient.collectionDate
+          }
+        : patient
+    );
+
+    setPatients(updatedPatients);
+    setIsEditModalOpen(false);
+    setSelectedPatient(null);
+    resetPatientForm();
+    toast.success("Patient updated successfully");
+  };
+
+  const handleDeletePatient = () => {
+    if (!selectedPatient) return;
+    
+    const updatedPatients = patients.filter(patient => patient.id !== selectedPatient.id);
+    setPatients(updatedPatients);
+    setIsDeleteDialogOpen(false);
+    setSelectedPatient(null);
+    toast.success("Patient deleted successfully");
+  };
+
+  const openEditModal = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setNewPatient({
+      id: patient.id,
+      name: patient.name,
+      age: patient.age,
+      sex: patient.sex,
+      contact: patient.contact,
+      referredBy: patient.referredBy,
+      collectionDate: patient.collectionDate
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const openDeleteDialog = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const viewPatientDetails = (patient: Patient) => {
+    // This would typically navigate to a patient details page
+    // For now, we'll just show a toast
+    toast.info(`Viewing details for patient: ${patient.name}`);
+  };
+
+  const resetPatientForm = () => {
     setNewPatient({
       id: `P-2024-${Math.floor(Math.random() * 9000) + 1000}`,
       name: '',
@@ -162,20 +247,37 @@ const Patients: React.FC = () => {
                       <td className="px-4 py-3">{patient.contact}</td>
                       <td className="px-4 py-3">{patient.referredBy}</td>
                       <td className="px-4 py-3">{patient.collectionDate}</td>
-                      <td className="px-4 py-3 flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        {canEditPatients && (
-                          <>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500">
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="flex items-center"
+                            onClick={() => viewPatientDetails(patient)}
+                          >
+                            <FileText className="h-4 w-4 mr-1" /> View
+                          </Button>
+                          {canEditPatients && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="flex items-center"
+                                onClick={() => openEditModal(patient)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" /> Edit
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-red-500 flex items-center"
+                                onClick={() => openDeleteDialog(patient)}
+                              >
+                                <Trash className="h-4 w-4 mr-1" /> Delete
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -294,6 +396,130 @@ const Patients: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Patient Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Patient</DialogTitle>
+            <DialogDescription>
+              Update the patient details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-id">Patient ID</Label>
+                <Input
+                  id="edit-id"
+                  name="id"
+                  value={newPatient.id}
+                  disabled
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-collectionDate">Collection Date</Label>
+                <Input
+                  id="edit-collectionDate"
+                  name="collectionDate"
+                  type="date"
+                  value={newPatient.collectionDate}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name*</Label>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  value={newPatient.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-age">Age*</Label>
+                  <Input
+                    id="edit-age"
+                    name="age"
+                    type="number"
+                    value={newPatient.age}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-sex">Sex*</Label>
+                  <Select
+                    value={newPatient.sex?.toString()}
+                    onValueChange={(value) => handleSelectChange('sex', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-contact">Contact Number</Label>
+              <Input
+                id="edit-contact"
+                name="contact"
+                value={newPatient.contact}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-referredBy">Referred By</Label>
+              <Input
+                id="edit-referredBy"
+                name="referredBy"
+                value={newPatient.referredBy}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditPatient} className="bg-lab-primary hover:bg-lab-primary/90">
+              Update Patient
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the patient 
+              {selectedPatient && <span className="font-medium"> {selectedPatient.name}</span>} and all associated records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePatient}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

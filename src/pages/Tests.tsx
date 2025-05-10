@@ -1,12 +1,39 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, TestTube, Search } from 'lucide-react';
+import { Plus, TestTube, Search, Edit, Trash } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
-const testGroups = [
+interface Test {
+  id: number;
+  name: string;
+  unit: string;
+  normalRange: {
+    male: string;
+    female: string;
+  };
+}
+
+interface TestGroup {
+  id: number;
+  name: string;
+  tests: Test[];
+}
+
+const initialTestGroups = [
   {
     id: 1,
     name: 'Complete Blood Count (CBC)',
@@ -42,6 +69,183 @@ const testGroups = [
 const Tests: React.FC = () => {
   const { user, checkPermission } = useAuth();
   const canEditTests = checkPermission(['admin', 'labTechnician']);
+  const [testGroups, setTestGroups] = useState<TestGroup[]>(initialTestGroups);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAddTestOpen, setIsAddTestOpen] = useState(false);
+  const [isAddToGroupOpen, setIsAddToGroupOpen] = useState(false);
+  const [currentGroupId, setCurrentGroupId] = useState<number | null>(null);
+  const [isEditTestOpen, setIsEditTestOpen] = useState(false);
+  const [currentTest, setCurrentTest] = useState<Test | null>(null);
+  const [newTest, setNewTest] = useState<Partial<Test>>({
+    name: '',
+    unit: '',
+    normalRange: {
+      male: '',
+      female: ''
+    }
+  });
+
+  const filteredGroups = testGroups.filter((group) => {
+    if (!searchTerm) return true;
+    
+    if (group.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return true;
+    }
+    
+    return group.tests.some((test) => 
+      test.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleAddTest = () => {
+    if (!newTest.name || !newTest.unit) {
+      toast.error("Test name and unit are required");
+      return;
+    }
+
+    if (currentGroupId === null) {
+      toast.error("Please select a test group");
+      return;
+    }
+
+    const newTestId = Math.max(...testGroups.flatMap(group => group.tests.map(test => test.id))) + 1;
+    
+    const updatedGroups = testGroups.map(group => {
+      if (group.id === currentGroupId) {
+        return {
+          ...group,
+          tests: [
+            ...group.tests,
+            {
+              id: newTestId,
+              name: newTest.name || '',
+              unit: newTest.unit || '',
+              normalRange: {
+                male: newTest.normalRange?.male || '',
+                female: newTest.normalRange?.female || ''
+              }
+            }
+          ]
+        };
+      }
+      return group;
+    });
+
+    setTestGroups(updatedGroups);
+    setNewTest({
+      name: '',
+      unit: '',
+      normalRange: {
+        male: '',
+        female: ''
+      }
+    });
+    setIsAddToGroupOpen(false);
+    toast.success("Test added successfully");
+  };
+
+  const handleEditTest = (test: Test, groupId: number) => {
+    setCurrentTest(test);
+    setCurrentGroupId(groupId);
+    setNewTest({
+      name: test.name,
+      unit: test.unit,
+      normalRange: {
+        male: test.normalRange.male,
+        female: test.normalRange.female
+      }
+    });
+    setIsEditTestOpen(true);
+  };
+
+  const handleUpdateTest = () => {
+    if (!newTest.name || !newTest.unit || !currentTest || currentGroupId === null) {
+      toast.error("Missing required information");
+      return;
+    }
+
+    const updatedGroups = testGroups.map(group => {
+      if (group.id === currentGroupId) {
+        return {
+          ...group,
+          tests: group.tests.map(test => {
+            if (test.id === currentTest.id) {
+              return {
+                ...test,
+                name: newTest.name || test.name,
+                unit: newTest.unit || test.unit,
+                normalRange: {
+                  male: newTest.normalRange?.male || test.normalRange.male,
+                  female: newTest.normalRange?.female || test.normalRange.female
+                }
+              };
+            }
+            return test;
+          })
+        };
+      }
+      return group;
+    });
+
+    setTestGroups(updatedGroups);
+    setIsEditTestOpen(false);
+    setCurrentTest(null);
+    toast.success("Test updated successfully");
+  };
+
+  const handleDeleteTest = (testId: number, groupId: number) => {
+    const updatedGroups = testGroups.map(group => {
+      if (group.id === groupId) {
+        return {
+          ...group,
+          tests: group.tests.filter(test => test.id !== testId)
+        };
+      }
+      return group;
+    });
+
+    setTestGroups(updatedGroups);
+    toast.success("Test deleted successfully");
+  };
+
+  const handleAddToGroup = (groupId: number) => {
+    setCurrentGroupId(groupId);
+    setNewTest({
+      name: '',
+      unit: '',
+      normalRange: {
+        male: '',
+        female: ''
+      }
+    });
+    setIsAddToGroupOpen(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    if (name.includes('.')) {
+      // Handle nested properties (normalRange.male, normalRange.female)
+      const [parent, child] = name.split('.');
+      setNewTest(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent as keyof typeof prev] as object,
+          [child]: value
+        }
+      }));
+    } else {
+      // Handle top-level properties
+      setNewTest(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -50,8 +254,9 @@ const Tests: React.FC = () => {
         {canEditTests && (
           <Button 
             className="bg-lab-primary hover:bg-lab-primary/90"
+            onClick={() => setIsAddTestOpen(true)}
           >
-            <Plus className="mr-2 h-4 w-4" /> Add Test
+            <Plus className="mr-2 h-4 w-4" /> Add Test Group
           </Button>
         )}
       </div>
@@ -62,12 +267,14 @@ const Tests: React.FC = () => {
           <Input
             placeholder="Search tests..."
             className="pl-9"
+            value={searchTerm}
+            onChange={handleSearchChange}
           />
         </div>
       </div>
       
       <div className="space-y-6">
-        {testGroups.map((group) => (
+        {filteredGroups.map((group) => (
           <Card key={group.id} className="shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -76,7 +283,11 @@ const Tests: React.FC = () => {
                   {group.name}
                 </CardTitle>
                 {canEditTests && (
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleAddToGroup(group.id)}
+                  >
                     <Plus className="mr-1 h-3 w-3" /> Add to Group
                   </Button>
                 )}
@@ -104,8 +315,21 @@ const Tests: React.FC = () => {
                         {canEditTests && (
                           <td className="px-4 py-3">
                             <div className="flex gap-1">
-                              <Button variant="ghost" size="sm">Edit</Button>
-                              <Button variant="ghost" size="sm" className="text-red-500">Delete</Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEditTest(test, group.id)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" /> Edit
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-red-500"
+                                onClick={() => handleDeleteTest(test.id, group.id)}
+                              >
+                                <Trash className="h-4 w-4 mr-1" /> Delete
+                              </Button>
                             </div>
                           </td>
                         )}
@@ -118,6 +342,194 @@ const Tests: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      {/* Add Test Group Dialog */}
+      <Dialog open={isAddTestOpen} onOpenChange={setIsAddTestOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Test Group</DialogTitle>
+            <DialogDescription>
+              Create a new group of tests for the laboratory.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="groupName">Group Name</Label>
+              <Input
+                id="groupName"
+                placeholder="e.g., Kidney Function Tests"
+                value={newTest.name}
+                onChange={(e) => setNewTest(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddTestOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (!newTest.name) {
+                  toast.error("Group name is required");
+                  return;
+                }
+                
+                const newGroupId = Math.max(...testGroups.map(g => g.id)) + 1;
+                setTestGroups([...testGroups, {
+                  id: newGroupId,
+                  name: newTest.name,
+                  tests: []
+                }]);
+                setNewTest({ name: '', unit: '', normalRange: { male: '', female: '' } });
+                setIsAddTestOpen(false);
+                toast.success("Test group added successfully");
+              }}
+              className="bg-lab-primary hover:bg-lab-primary/90"
+            >
+              Add Group
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Test to Group Dialog */}
+      <Dialog open={isAddToGroupOpen} onOpenChange={setIsAddToGroupOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Test to Group</DialogTitle>
+            <DialogDescription>
+              Add a new test to the selected group.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="testName">Test Name*</Label>
+              <Input
+                id="testName"
+                name="name"
+                placeholder="e.g., Blood Glucose"
+                value={newTest.name}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="unit">Unit*</Label>
+              <Input
+                id="unit"
+                name="unit"
+                placeholder="e.g., mg/dL"
+                value={newTest.unit}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="normalRangeMale">Normal Range (Male)</Label>
+                <Input
+                  id="normalRangeMale"
+                  name="normalRange.male"
+                  placeholder="e.g., 70-110"
+                  value={newTest.normalRange?.male}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="normalRangeFemale">Normal Range (Female)</Label>
+                <Input
+                  id="normalRangeFemale"
+                  name="normalRange.female"
+                  placeholder="e.g., 70-110"
+                  value={newTest.normalRange?.female}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddToGroupOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddTest}
+              className="bg-lab-primary hover:bg-lab-primary/90"
+            >
+              Add Test
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Test Dialog */}
+      <Dialog open={isEditTestOpen} onOpenChange={setIsEditTestOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Test</DialogTitle>
+            <DialogDescription>
+              Update the test information.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editTestName">Test Name*</Label>
+              <Input
+                id="editTestName"
+                name="name"
+                value={newTest.name}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editUnit">Unit*</Label>
+              <Input
+                id="editUnit"
+                name="unit"
+                value={newTest.unit}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editNormalRangeMale">Normal Range (Male)</Label>
+                <Input
+                  id="editNormalRangeMale"
+                  name="normalRange.male"
+                  value={newTest.normalRange?.male}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editNormalRangeFemale">Normal Range (Female)</Label>
+                <Input
+                  id="editNormalRangeFemale"
+                  name="normalRange.female"
+                  value={newTest.normalRange?.female}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditTestOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdateTest}
+              className="bg-lab-primary hover:bg-lab-primary/90"
+            >
+              Update Test
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
