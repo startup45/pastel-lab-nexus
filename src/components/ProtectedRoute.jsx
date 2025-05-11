@@ -2,13 +2,14 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ 
   children, 
   allowedRoles = ['admin', 'labTechnician', 'receptionist']
 }) => {
   const { isAuthenticated, checkPermission, isLoading } = useAuth();
-  const { navigate } = useNavigation();
+  const navigation = useNavigation();
 
   if (isLoading) {
     return (
@@ -22,13 +23,21 @@ const ProtectedRoute = ({
   }
 
   if (!isAuthenticated) {
-    navigate('login');
-    return null;
+    // Handle both navigation systems
+    if (navigation && navigation.navigate) {
+      navigation.navigate('login');
+      return null;
+    }
+    return <Navigate to="/login" replace />;
   }
 
   if (!checkPermission(allowedRoles)) {
-    navigate('unauthorized');
-    return null;
+    // Handle both navigation systems
+    if (navigation && navigation.navigate) {
+      navigation.navigate('unauthorized');
+      return null;
+    }
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <>{children}</>;
