@@ -2,7 +2,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
-import { useNavigation } from '../contexts/NavigationContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,7 +13,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles = ['admin', 'labTechnician', 'receptionist']
 }) => {
   const { isAuthenticated, checkPermission, isLoading } = useAuth();
-  const navigation = useNavigation();
 
   if (isLoading) {
     return (
@@ -28,20 +26,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
-    // Handle both navigation systems
-    if (navigation && navigation.navigate) {
-      navigation.navigate('login');
-      return null;
-    }
     return <Navigate to="/login" replace />;
   }
 
   if (!checkPermission(allowedRoles)) {
-    // Handle both navigation systems
-    if (navigation && navigation.navigate) {
-      navigation.navigate('unauthorized');
-      return null;
-    }
     return <Navigate to="/unauthorized" replace />;
   }
 
